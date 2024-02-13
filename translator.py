@@ -1,4 +1,4 @@
-chars = ["=", "+", "%", "/", "*", ";", "(", ")", "{", "}", ">", "<"]
+chars = ["=", "+", "-", "%", "/", "*", ";", "(", ")", "{", "}", ">", "<"]
 
 def read_file(file_name):
     file=open("C:\\Users\\Kostya\\Desktop\\ITMO\\ITMO_5sem\\APC\\lab3\\language.txt", "r")    
@@ -16,12 +16,12 @@ def read_file(file_name):
     return res
 def make_err_sym_not_found(a):
     return "Error: symbol not found(" + a +")"
-def make_compare(a, b, sym):
+def make_compare(a, b, sym): # tm1, t2
     res=[]
     x=sym[a]
     try:
         x = int(a)
-        res.append("ldi " + str(x)) #добавить в машинный
+        res.append("ldi " + str(x)) 
     except:
         try:
             x = sym[a]
@@ -40,6 +40,8 @@ def make_compare(a, b, sym):
     return res
 
 def make_assign(a,b,sym):
+    res=[]
+    x=sym[a]
     try:
         x = int(b)
         res.append("ldi " + str(x))
@@ -57,9 +59,11 @@ def make_assign(a,b,sym):
     return res
     
 def make_add(a, b, sym):
+    res=[]
+    x=sym[a]
     try:
         x = int(a)
-        res.append("ldi " + str(x)) #добавить в машинный
+        res.append("ldi " + str(x))
     except:
         try:
             x = sym[a]
@@ -76,6 +80,98 @@ def make_add(a, b, sym):
         except:
             res.append(make_err_sym_not_found(b))
     return res
+
+def make_sub(a,b,sym):
+    res=[]
+    x=sym[a]
+    try:
+        x = int(a)
+        res.append("ldi " + str(x)) 
+    except:
+        try:
+            x = sym[a]
+            res.append("lda " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(a))
+    try:
+        x = int(b)
+        res.append("subi " + str(x))
+    except:
+        try:
+            x = sym[b]
+            res.append("sub " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(b))
+    return res
+
+def make_div(a,b,sym):
+    res=[]
+    x=sym[a]
+    try:
+        x = int(a)
+        res.append("ldi " + str(x)) 
+    except:
+        try:
+            x = sym[a]
+            res.append("lda " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(a))
+    try:
+        x = int(b)
+        res.append("divi " + str(x))
+    except:
+        try:
+            x = sym[b]
+            res.append("div " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(b))
+    return res
+def make_mod(a,b,sym):
+    res=[]
+    x=sym[a]
+    try:
+        x = int(a)
+        res.append("ldi " + str(x)) 
+    except:
+        try:
+            x = sym[a]
+            res.append("lda " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(a))
+    try:
+        x = int(b)
+        res.append("modi " + str(x))
+    except:
+        try:
+            x = sym[b]
+            res.append("mod " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(b))
+    return res
+def make_mul(a,b,sym):
+    res=[]
+    x=sym[a]
+    try:
+        x = int(a)
+        res.append("ldi " + str(x)) 
+    except:
+        try:
+            x = sym[a]
+            res.append("lda " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(a))
+    try:
+        x = int(b)
+        res.append("muli " + str(x))
+    except:
+        try:
+            x = sym[b]
+            res.append("mul " + str(x[0]))
+        except:
+            res.append(make_err_sym_not_found(b))
+    return res
+
+
         
 
 def translator(list_com, code_start, data_start):
@@ -112,6 +208,29 @@ def translator(list_com, code_start, data_start):
         elif t=="+":
             if t1=="=":
                 res+=make_add(tm1, t2,sym)
+            else:
+                res+=make_add(tm1, t1,sym)
+        elif t=="-":
+            if t1=="=":
+                res+=make_sub(tm1, t2,sym)
+            else:
+                res+=make_sub(tm1, t1,sym)
+        elif t=="/":
+            if t1=="=":
+                res+=make_div(tm1, t2,sym)
+            else:
+                res+=make_div(tm1, t1,sym)
+        elif t=="%":
+            if t1=="=":
+                res+=make_mod(tm1, t2,sym)
+            else:
+                res+=make_mod(tm1, t1,sym)
+        elif t=="*":
+            if t1=="=":
+                res+=make_mul(tm1, t2,sym)
+            else:
+                res+=make_mul(tm1, t1,sym)
+            
         # ............................................
         else:
             sym[t]=[data_addr, current_type]

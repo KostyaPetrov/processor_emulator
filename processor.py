@@ -54,6 +54,8 @@ def run(org):
             if (res == False):
                 return
             
+        elif cmd == 'ldi':
+            acc=arg
         elif cmd == 'ldax':
             res, dr=ld_num(arg)
             res, acc=ld_num(dr)
@@ -71,6 +73,9 @@ def run(org):
             if (res == False):
                 return
             acc+=dr
+        elif cmd=='addi':
+            dr=arg
+            acc=acc+dr
             
         elif cmd == 'sub':
             res, dr = ld_num(arg)
@@ -89,6 +94,22 @@ def run(org):
                 zf=0
                 sf=0
                 cf=0
+        elif cmd == 'subi':
+            dr=arg
+            acc=acc-dr
+            if acc==0:
+                zf=1
+                sf=0
+                cf=0
+            elif acc<0:
+                zf=0
+                sf=1
+                cf=0
+            else:
+                zf=0
+                sf=0
+                cf=0
+                
         elif cmd == 'mul':
             res, dr = ld_num(arg)
             if(res==False):
@@ -98,8 +119,27 @@ def run(org):
             res, dr = ld_num(arg)
             if(res==False):
                 return
-            acc=acc//dr
+            acc=acc/dr
         
+        elif cmd == 'divi':
+            dr=arg
+            acc=acc/dr
+        elif cmd == 'mod':
+            res, dr = ld_num(arg)
+            if(res==False):
+                return
+            acc=acc%dr
+        elif cmd == 'modi':
+            dr=arg
+            acc=acc%dr
+        elif cmd == 'mul':
+            res, dr = ld_num(arg)
+            if(res==False):
+                return
+            acc=acc*dr
+        elif cmd == 'muli':
+            dr=arg
+            acc=acc*dr
         elif cmd == "ldi":
             res, dr = ld_num(arg)
             if(res == False):
