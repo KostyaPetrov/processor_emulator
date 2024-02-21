@@ -1,9 +1,13 @@
 import re
 chars = ["=", "+", "-", "%", "/", "*", ";", "(", ")", "{", "}", ">", "<"]
 sym={} # ключь-имя; Значение-[адресс, тип]
+mem=['']*1024
+data_addr=0
+code_addr=100
+str_const=[]
 
 def read_file(file_name):
-    file=open("C:\\Users\\Kostya\\Desktop\\ITMO\\ITMO_5sem\\APC\\lab3\\test2.txt", "r")    
+    file=open(file_name, "r")    
     res=[]
     for s in file:
         x=s
@@ -27,7 +31,7 @@ def my_split(line):
     
 def make_err_sym_not_found(a):
     return "Error: symbol not found(" + a +")"
-def make_compare(a, b, sym): # tm1, t2
+def make_compare(a, b): # tm1, t2
     res=[]
     x=0
     try:
@@ -50,7 +54,7 @@ def make_compare(a, b, sym): # tm1, t2
             res.append(make_err_sym_not_found(b))
     return res
 
-def make_assign(a,b,sym):
+def make_assign(a,b):
     res=[]
     x=0
     try:
@@ -61,7 +65,10 @@ def make_assign(a,b,sym):
             x = sym[b]
             res.append("lda " + str(x[0]))
         except:
-            res.append(make_err_sym_not_found(b))    
+            if b[0]=="\"":
+                res+=make_str_const(b)
+            else:
+                res.append(make_err_sym_not_found(b))    
     try:
         y=sym[a]
         res.append("sta " + str(y[0]))
@@ -69,7 +76,7 @@ def make_assign(a,b,sym):
         res.append(make_err_sym_not_found(a))
     return res
 
-def make_assign1(a, sym):
+def make_assign1(a):
     res=[] 
     try:
         y=sym[a]
@@ -78,7 +85,7 @@ def make_assign1(a, sym):
         res.append(make_err_sym_not_found(a))
     return res
     
-def make_add(a, b, sym):
+def make_add(a, b):
     res=[]
     x=sym[a]
     try:
@@ -101,7 +108,7 @@ def make_add(a, b, sym):
             res.append(make_err_sym_not_found(b))
     return res
 
-def make_sub(a,b,sym):
+def make_sub(a,b):
     res=[]
     x=0
     try:
@@ -124,7 +131,7 @@ def make_sub(a,b,sym):
             res.append(make_err_sym_not_found(b))
     return res
 
-def make_div(a,b,sym):
+def make_div(a,b):
     res=[]
     x=sym[a]
     try:
@@ -146,7 +153,7 @@ def make_div(a,b,sym):
         except:
             res.append(make_err_sym_not_found(b))
     return res
-def make_mod(a,b,sym):
+def make_mod(a,b):
     res=[]
     x=0
     try:
@@ -168,7 +175,7 @@ def make_mod(a,b,sym):
         except:
             res.append(make_err_sym_not_found(b))
     return res
-def make_mul(a,b,sym):
+def make_mul(a,b):
     res=[]
     x=0
     try:
@@ -193,6 +200,27 @@ def make_mul(a,b,sym):
 def make_const(t):
     res=["ldi "+ t]
     return res
+
+def is_op(token):
+    if chars.count(token)>0:
+        return True
+    else:
+        return False
+
+def make_str_const(t):
+    global data_addr
+    n=0
+    p=data_addr+1
+    for i in range(1, len(t)-1):
+        mem[p]=t[i]
+        p+=1
+        n+=1
+    mem[data_addr]=n
+    str_const.append([data_addr, n])
+    res=["ldi "+str(data_addr)]
+    data_addr=p
+    return res
+    
 def make_var(t):
     x=sym[t][0]
     res=["lda "+ str(x)]
@@ -208,11 +236,10 @@ def find_token(list_com, start, tok):
     
     
 
-def translator(list_com, code_start, data_start):
+def translator(list_com):
+    global data_addr
     res=[]
     current_type=0
-    data_addr=data_start
-    code_addr=code_start
     labels={}
     list_com.append("#")
     list_com.append("#")
@@ -231,55 +258,62 @@ def translator(list_com, code_start, data_start):
         j=0
         if t.isnumeric():
             res+=make_const(t)
+        elif t[0]=="\"":
+            res+=make_str_const(t)
         elif t=="int":
             current_type=1
-        elif t == "string":
+        elif t == "str":
             current_type=2
             
         elif t==";":
             current_type=0
         elif t=="=":
             if t1=="=": #сравнение
-                res += make_compare(tm1, t2, sym)
+                res += make_compare(tm1, t2)
             else:
                 if t2==";" or t2=="#":
-                    res+=make_assign(tm1, t1, sym)   
+                    res+=make_assign(tm1, t1)   
                 else:
                     k=find_token(list_com, i+1, ";")
-                    res+=translator(list_com[i+1:k+1], code_addr, data_addr)
-                    res+=make_assign1(tm1, sym)        
+                    print("TRANS1:", list_com[i+1:k+1])
+                    res+=translator(list_com[i+1:k+1])
+                    
+                    res+=make_assign1(tm1)        
             
             current_type=0   
         elif t=="+":
             if t1=="=":
-                res+=make_add(tm1, t2,sym)
+                res+=make_add(tm1, t2)
             else:
-                res+=make_add(tm1, t1,sym)
+                res+=make_add(tm1, t1)
             current_type=0
             
         elif t=="-":
             if t1=="=":
-                res+=make_sub(tm1, t2,sym)
+                res+=make_sub(tm1, t2)
             else:
-                res+=make_sub(tm1, t1,sym)
+                res+=make_sub(tm1, t1)
             current_type=0
         elif t=="/":
             if t1=="=":
-                res+=make_div(tm1, t2,sym)
+                res+=make_div(tm1, t2)
             else:
-                res+=make_div(tm1, t1,sym)
+                res+=make_div(tm1, t1)
             current_type=0
         elif t=="%":
             if t1=="=":
-                res+=make_mod(tm1, t2,sym)
+                res+=make_mod(tm1, t2)
             else:
-                res+=make_mod(tm1, t1,sym)
+                res+=make_mod(tm1, t1)
             current_type=0
         elif t=="*":
             if t1=="=":
-                res+=make_mul(tm1, t2,sym)
+                
+                res+=make_mul(tm1, t2)
             else:
-                res+=make_mul(tm1, t1,sym)
+                print("MUL: ", res)
+                res+=make_mul(tm1, t1)
+                print("MUL2: ", res)
             current_type=0
         elif t=="(":
             j=i+1
@@ -295,7 +329,7 @@ def translator(list_com, code_start, data_start):
                     break
             sub_list_com = list_com[i + 1:j-1]    
             i-j
-            res += translator(sub_list_com, code_addr, data_addr)
+            res += translator(sub_list_com)
             current_type=0
         elif t=="{":
             j=i+1
@@ -310,7 +344,7 @@ def translator(list_com, code_start, data_start):
                 if j>=len(list_com):
                     break
             sub_list_com = list_com[i + 1:j-1]    
-            z=translator(sub_list_com, code_addr, data_addr)
+            z=translator(sub_list_com)
             if if_flag:
                 res += ["subi 0"]
                 res+="jz " + str(code_addr + len(z))
@@ -338,8 +372,10 @@ def translator(list_com, code_start, data_start):
         # ............................................
         else:
             if t in sym:
+                if is_op(t1)==False:
+                    res += make_var(t) # Тут и происходит "дополнительный" lda 0 перед умножением
+                    # написать функцию is_op, которая определяет является ли t1 арифметической операцией и если справа не операция, то только тогда делать make_var
                 
-                res += make_var(t)
                 current_type=sym[t][1]
             else:
                 sym[t]=[data_addr, current_type]
@@ -360,12 +396,13 @@ def translator(list_com, code_start, data_start):
             
             
     
-res=read_file("test2.txt")
-print(res)
+input=read_file("C:\\Users\\Kostya\\Desktop\\ITMO\\ITMO_5sem\\APC\\lab3\\test2.txt")
+print(input)
 print("######################")
-print(translator(res, 100, 0))
+print(translator(input))
 print("end")
+print(sym)
 
-#Написать свой сплит, чтобы пробелы в ковычках не удалялись 
+
 # Проверить корректность операций
-# Убрать повтор lda
+# строковые константы валяются в памяти данных и не заносятся в словарь символов. Надо ли это менять?
